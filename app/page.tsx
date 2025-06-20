@@ -338,7 +338,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card
+          {/* <Card
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => setCurrentPage("analytics")}
           >
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                 <BarChart3 className="h-12 w-12 text-muted-foreground" />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </main>
 
