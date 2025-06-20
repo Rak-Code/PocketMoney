@@ -31,6 +31,7 @@ import { collection, query, where, orderBy, onSnapshot, doc } from "firebase/fir
 import { db } from "@/lib/firebase/firebase"
 import { AddExpenseModal } from "@/components/add-expense-modal"
 import { AddTopupModal } from "@/components/add-topup-modal"
+import { Timestamp } from "firebase/firestore"
 
 interface ExpenseTransaction {
   id: string
@@ -162,6 +163,29 @@ export default function DashboardPage() {
 
   const progress = (wallet / 5000) * 100
 
+  // Calculate total expenses for the current month
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const monthlyExpenses = transactions
+    .filter((tx) => {
+      if (tx.type !== "expense" || !tx.date) return false;
+      let txDate;
+      if (typeof tx.date === "object" && tx.date.seconds) {
+        txDate = new Date(tx.date.seconds * 1000);
+      } else if (typeof tx.date === "string" || typeof tx.date === "number") {
+        txDate = new Date(tx.date);
+      } else {
+        return false;
+      }
+      return (
+        !isNaN(txDate) &&
+        txDate.getMonth() === thisMonth &&
+        txDate.getFullYear() === thisYear
+      );
+    })
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
@@ -213,7 +237,7 @@ export default function DashboardPage() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{wallet.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₹{monthlyExpenses.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 vs. ₹{wallet.toLocaleString()} pocket money
               </p>
@@ -231,23 +255,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card
-            className="flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => setCurrentPage("analytics")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Spending Progress</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="flex-1">
-              <Progress value={progress} aria-label={`${progress.toFixed(2)}% spent`} />
-            </CardContent>
-            <CardFooter>
-              <p className="text-xs text-muted-foreground">
-                You've spent {progress.toFixed(0)}% of your monthly budget.
-              </p>
-            </CardFooter>
-          </Card>
+       
         </div>
 
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
